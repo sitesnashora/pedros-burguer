@@ -81,10 +81,10 @@ header{position:sticky;top:0;z-index:60;background:var(--red2);color:#fff;box-sh
 .sec{padding:clamp(70px,10vw,120px) 0}
 
 /* como funciona (pinned) */
-.flow{height:330vh;position:relative;background:var(--cream2)}
-.flow-pin{position:sticky;top:66px;height:calc(100svh - 66px);display:grid;grid-template-columns:.9fr 1.1fr;align-items:center;gap:30px;width:min(1180px,100% - 32px);margin:0 auto;padding:20px 0}
+.flow{position:relative;background:var(--cream2);padding:clamp(60px,9vw,100px) 0}
+.flow-pin{position:relative;display:grid;grid-template-columns:.9fr 1.1fr;align-items:center;gap:30px;width:min(1180px,100% - 32px);margin:0 auto}
 .steps{list-style:none;display:grid;gap:10px;margin-top:20px}
-.steps li{display:grid;grid-template-columns:42px 1fr;gap:12px;align-items:start;padding:12px 14px;border-radius:16px;background:var(--card);border:2px solid transparent;opacity:.45;transition:all .35s var(--ease)}
+.steps li{display:grid;grid-template-columns:42px 1fr;gap:12px;align-items:start;padding:12px 14px;border-radius:16px;background:var(--card);border:2px solid transparent;opacity:.5;transition:all .35s var(--ease);cursor:pointer}
 .steps li.on{opacity:1;border-color:var(--red);transform:translateX(6px);box-shadow:0 10px 20px -14px rgba(92,14,14,.6)}
 .steps li.done{opacity:.85}
 .steps b{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:var(--cream2);font-family:var(--fh);font-size:1.3rem;color:var(--red)}
@@ -119,12 +119,14 @@ header{position:sticky;top:0;z-index:60;background:var(--red2);color:#fff;box-sh
 .track-l span.on{color:var(--green)}
 .track h4{font-family:var(--fh);font-weight:400;font-size:1.1rem}
 @media(max-width:860px){
- .flow-pin{grid-template-columns:1fr;grid-template-rows:auto 1fr;align-content:start;gap:6px;padding-top:12px}
- .flow-pin h2{font-size:1.9rem;margin:4px 0 0}
- .steps{margin-top:8px;gap:6px}.steps li{display:none;padding:10px 12px}.steps li.on{display:grid;transform:none}
- .stage{height:auto;min-height:360px;align-self:stretch}
+ .flow-pin{grid-template-columns:1fr;gap:18px}
+ .flow-pin h2{font-size:2rem}
+ .steps{margin-top:12px;gap:8px}.steps li{padding:10px 12px}.steps li.on{transform:none}
+ .steps li p{font-size:.84rem}
+ .stage{height:400px}
  .phone{width:42%;left:2%}.printer{width:50%;right:2%;top:4%}
  .track{bottom:2%;left:2%;right:2%}
+}
 }
 
 /* cardápio */
@@ -456,14 +458,16 @@ renderCart();
 
 /* ===== como funciona (rolagem) ===== */
 const flow=$('#como'),steps=$$('#steps li'),items=$$('.sc-item'),scTot=$('#scTot'),scBtn=$('#scBtn'),clip=$('#paperClip'),paper=$('#paper'),prBody=$('#prBody'),track=$('#track'),road=$('#roadFill'),moto=$('#moto'),phone=$('#phone');
-const prices=[36,26,35,15];let lastS=-1,tick=false;
-function frame(){tick=false;const r=flow.getBoundingClientRect(),vh=innerHeight;if(r.bottom<0||r.top>vh)return;const p=RM?1:clamp(-r.top/(r.height-vh+66),0,1);
- const a=seg(p,.02,.28),n=Math.floor(a*4.999);items.forEach((it,i)=>it.classList.toggle('on',i<n||a>=1));const t=prices.slice(0,a>=1?4:n).reduce((s,v)=>s+v,0);scTot.textContent=brl(t);
- const sent=p>.32;scBtn.classList.toggle('sent',sent);scBtn.textContent=sent?'✓ Pedido enviado':'Enviar pedido';phone.style.transform=`translateY(-50%) scale(${sent?.94:1})`;
- const pr=ease(seg(p,.36,.62));prBody.style.setProperty('--led',p>.34?1:0);clip.style.height=(paper.offsetHeight*pr)+'px';
- const tr=seg(p,.68,.98);track.classList.toggle('on',p>.64);road.style.width=(tr*100)+'%';moto.style.left=(tr*100)+'%';['tl0','tl1','tl2','tl3'].forEach((id,i)=>$('#'+id).classList.toggle('on',tr>=i/3-.01&&p>.64));
- const s=p<.33?0:p<.65?1:2;if(s!==lastS){lastS=s;steps.forEach((li,i)=>{li.classList.toggle('on',i===s);li.classList.toggle('done',i<s)})}}
-const onS=()=>{if(!tick){tick=true;requestAnimationFrame(frame)}};addEventListener('scroll',onS,{passive:true});addEventListener('resize',onS);frame();
+const prices=[36,26,35,15];let lastS=-1,vis=false,t0=0,raf=0;const CYCLE=10000;
+function draw(p){
+ const a=seg(p,.02,.26),n=Math.floor(a*4.999);items.forEach((it,i)=>it.classList.toggle('on',i<n||a>=1));const t=prices.slice(0,a>=1?4:n).reduce((s,v)=>s+v,0);scTot.textContent=brl(t);
+ const sent=p>.3;scBtn.classList.toggle('sent',sent);scBtn.textContent=sent?'✓ Pedido enviado':'Enviar pedido';phone.style.transform=`translateY(-50%) scale(${sent?.94:1})`;
+ const pr=ease(seg(p,.34,.6));prBody.style.setProperty('--led',p>.32?1:0);clip.style.height=(paper.offsetHeight*pr)+'px';
+ const tr=seg(p,.66,.94);track.classList.toggle('on',p>.62);road.style.width=(tr*100)+'%';moto.style.left=(tr*100)+'%';['tl0','tl1','tl2','tl3'].forEach((id,i)=>$('#'+id).classList.toggle('on',tr>=i/3-.01&&p>.62));
+ const s=p<.31?0:p<.63?1:2;if(s!==lastS){lastS=s;steps.forEach((li,i)=>{li.classList.toggle('on',i===s);li.classList.toggle('done',i<s)})}}
+function loop(now){if(!vis){raf=0;return}const p=((now-t0)%CYCLE)/CYCLE;draw(Math.min(1,p*1.08));raf=requestAnimationFrame(loop)}
+const starts=[0,.33,.66];steps.forEach((li,i)=>li.addEventListener('click',()=>{t0=performance.now()-starts[i]*CYCLE/1.08;if(RM)draw([.3,.62,1][i])}));
+if(RM){draw(1)}else{new IntersectionObserver(es=>{vis=es[0].isIntersecting;if(vis&&!raf){t0=performance.now();raf=requestAnimationFrame(loop)}},{threshold:.35}).observe(flow);draw(0)}
 })();
 </script>
 </body>
