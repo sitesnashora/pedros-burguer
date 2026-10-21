@@ -247,6 +247,12 @@ textarea:focus,.f input:focus,.f select:focus{border-color:var(--red)}
 .toast{position:fixed;left:50%;top:80px;transform:translate(-50%,-20px);z-index:95;background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-weight:800;font-size:.9rem;opacity:0;pointer-events:none;transition:all .3s;max-width:calc(100vw - 32px);text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}}
+
+/* modal: rolagem e X fixo */
+.ov{touch-action:auto}
+.sheet{-webkit-overflow-scrolling:touch}
+.toast{top:auto!important;bottom:96px}
+.sheet>.x{position:sticky;top:12px;right:auto;margin:12px 12px -52px auto;display:grid;place-items:center;z-index:6;box-shadow:0 4px 14px rgba(0,0,0,.28)}
 </style>
 </head>
 <body>
@@ -469,6 +475,13 @@ function loop(now){if(!vis){raf=0;return}const p=((now-t0)%CYCLE)/CYCLE;draw(Mat
 const starts=[0,.33,.66];steps.forEach((li,i)=>li.addEventListener('click',()=>{t0=performance.now()-starts[i]*CYCLE/1.08;if(RM)draw([.3,.62,1][i])}));
 if(RM){draw(1)}else{new IntersectionObserver(es=>{vis=es[0].isIntersecting;if(vis&&!raf){t0=performance.now();raf=requestAnimationFrame(loop)}},{threshold:.35}).observe(flow);draw(0)}
 })();
+
+/* modal: rolagem com mouse/dedo, X sempre visível, botão voltar do celular fecha */
+(()=>{const fx=sh=>{const x=sh.querySelector('.x');if(x&&x.parentElement!==sh)sh.prepend(x)};
+let pushed=false,skip=false;const anyOpen=()=>document.querySelector('.ov.show');
+document.querySelectorAll('.ov').forEach(ov=>{ov.setAttribute('data-lenis-prevent','');const sh=ov.querySelector('.sheet');if(sh){fx(sh);new MutationObserver(()=>fx(sh)).observe(sh,{childList:true})}
+ new MutationObserver(()=>{if(anyOpen()){if(!pushed){try{history.pushState({ov:1},'');pushed=true}catch(e){}}}else if(pushed){setTimeout(()=>{if(!anyOpen()&&pushed){pushed=false;skip=true;history.back()}},60)}}).observe(ov,{attributes:true,attributeFilter:['class']})});
+addEventListener('popstate',()=>{if(skip){skip=false;return}if(pushed){pushed=false;const o=anyOpen();if(o)o.dispatchEvent(new MouseEvent('click',{bubbles:true}))}})})();
 </script>
 </body>
 </html>
