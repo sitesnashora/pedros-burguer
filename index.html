@@ -360,8 +360,9 @@ const clamp=(v,a,b)=>Math.min(b,Math.max(a,v)),seg=(p,a,b)=>clamp((p-a)/(b-a),0,
 const brl=v=>'R$ '+v.toFixed(2).replace('.',',');
 const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const U=(id,w,h)=>`https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&h=${h}&q=68`;
-let lenis=null;if(window.Lenis&&!RM){lenis=new Lenis({duration:1.05,smoothWheel:true});window.__lenis=lenis;const raf=t=>{lenis.raf(t);requestAnimationFrame(raf)};requestAnimationFrame(raf)}
-const scrollToEl=(el,off=-70)=>{lenis?lenis.scrollTo(el,{offset:off}):el.scrollIntoView({behavior:'smooth'})};
+let lenis=null;const TOUCH=matchMedia('(hover: none), (pointer: coarse)').matches;
+if(window.Lenis&&!RM&&!TOUCH){lenis=new Lenis({duration:1.05,smoothWheel:true});window.__lenis=lenis;const raf=t=>{lenis.raf(t);requestAnimationFrame(raf)};requestAnimationFrame(raf)}
+const scrollToEl=(el,off=-70)=>{const y=Math.max(0,Math.round(el.getBoundingClientRect().top+scrollY+off));if(lenis)lenis.scrollTo(y,{force:true});else scrollTo({top:y,behavior:RM?'auto':'smooth'})};
 $$('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{const t=document.querySelector(a.getAttribute('href'));if(!t)return;e.preventDefault();scrollToEl(t,a.getAttribute('href')==='#topo'?-200:-66)}));
 const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),1800)};
 
@@ -398,9 +399,10 @@ const MENU=[
 const PRODUCTS=[];MENU.forEach(c=>c.items.forEach((it,i)=>PRODUCTS.push({id:c.id+'-'+i,cat:c.id,name:it[0],desc:it[1],price:it[2],img:IMG[it[3]],opts:c.opts(it)})));
 $('#cats').innerHTML=MENU.map((c,i)=>`<button type="button" data-c="${c.id}" class="${i?'':'on'}">${c.name}</button>`).join('');
 $('#menu').innerHTML=MENU.map(c=>`<section class="cat-sec" id="c-${c.id}"><h3>${c.name} <small>${c.sub}</small></h3><div class="items">${PRODUCTS.filter(p=>p.cat===c.id).map(p=>`<button class="item" type="button" data-p="${p.id}"><img src="${U(p.img,600,380)}" alt="${esc(p.name)}" loading="lazy"><div class="b"><h4>${esc(p.name)}</h4><p>${esc(p.desc)}</p><div class="row"><span class="price">${p.opts.some(g=>g.g==='Tamanho')?'<small>a partir de </small>':''}${brl(p.price)}</span><span class="plus">+</span></div></div></button>`).join('')}</div></section>`).join('');
-$$('#cats button').forEach(b=>b.addEventListener('click',()=>{const el=$('#c-'+b.dataset.c);scrollToEl(el,-130);setCat(b.dataset.c)}));
-function setCat(id){$$('#cats button').forEach(b=>{const on=b.dataset.c===id;b.classList.toggle('on',on);if(on)b.scrollIntoView({inline:'center',block:'nearest',behavior:RM?'auto':'smooth'})})}
-const cio=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)setCat(e.target.id.slice(2))}),{rootMargin:'-45% 0px -50% 0px'});$$('.cat-sec').forEach(s=>cio.observe(s));
+$$('#cats button').forEach(b=>b.addEventListener('click',()=>{catLock=Date.now();const el=$('#c-'+b.dataset.c);scrollToEl(el,-130);setCat(b.dataset.c)}));
+function setCat(id){$$('#cats button').forEach(b=>{const on=b.dataset.c===id;if(b.classList.contains('on')===on)return;b.classList.toggle('on',on);if(on){const n=b.parentElement;n.scrollLeft=b.offsetLeft-n.clientWidth/2+b.offsetWidth/2}})}
+let catLock=0;
+const cio=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting&&Date.now()-catLock>1200)setCat(e.target.id.slice(2))}),{rootMargin:'-45% 0px -50% 0px'});$$('.cat-sec').forEach(s=>cio.observe(s));
 
 /* ===== modais ===== */
 let openOv=null;
